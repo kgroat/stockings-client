@@ -1,0 +1,29 @@
+
+import {Subscriber, Subscription} from 'rxjs/rx';
+
+import {SocketConnection} from '../socketConnection';
+import {sendData} from '../connectionHelpers';
+
+const CLIENT_TOKEN_TYPE = 'client-token';
+
+const ONE_SECOND = 1000;
+
+const MAX_TRIES = 12;
+
+export function applyToken(connection: SocketConnection, tokenSubscribers: Map<string, Subscriber<string>>) {
+  var tokenWaiterTimerId: number;
+  var wasOpen = false;
+  connection.openObservable.subscribe((isOpen) => {
+    if(isOpen && !wasOpen){
+      tokenWaiterTimerId = setTimeout(() => {
+        connection.restart();
+      });
+    }
+    wasOpen = isOpen;
+  })
+
+  connection.getControl(CLIENT_TOKEN_TYPE).subscribe((token) => {
+    sendData(tokenSubscribers, token);
+    clearTimeout(tokenWaiterTimerId);
+  });
+}

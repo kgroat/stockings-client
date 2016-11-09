@@ -1,0 +1,8 @@
+.vscode
+.DS_Store
+node_modules
+typings
+**/*.js
+**/*.js.map
+**/*.d.ts
+!customTypings.d.ts
