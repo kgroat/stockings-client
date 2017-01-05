@@ -1,37 +1,5 @@
 import {Observable, Subscriber} from 'rxjs/Rx';
 
-export class StockingsHeaders implements HttpHeaders {
-  private _headers: Map<string, string> = new Map();
-  constructor() {
-    
-  }
-  keys() : string[]{
-    var output = [];
-    var iterator = this._headers.keys();
-    var nxt = iterator.next();
-    while(!nxt.done){
-      output.push(nxt.value);
-      nxt = iterator.next();
-    }
-    return output;
-  }
-  set(name: string, value: string|string[]){
-    var valueAsString: string;
-    if(value instanceof Array){
-      valueAsString = value.join(',');
-    } else {
-      valueAsString = value;
-    }
-    this._headers.set(name, valueAsString);
-  }
-  get(name: string) : string {
-    return this._headers.get(name);
-  }
-  has(name: string) : boolean {
-    return this._headers.has(name);
-  }
-}
-
 export class StockingsRequest implements HttpRequest {
   constructor(options: HttpRequest) {
     this.url = options.url;
@@ -46,7 +14,7 @@ export class StockingsRequest implements HttpRequest {
   url: string;
   method: string;
   search?: string|SearchParams;
-  headers: HttpHeaders = new StockingsHeaders();
+  headers: HttpHeaders = new HttpHeadersFromDictionary();
   body?: any;
   responseType?: string;
 }
@@ -131,15 +99,18 @@ class HttpResponseFromXhr implements HttpResponse {
 }
 
 class HttpHeadersFromDictionary implements HttpHeaders {
-  private _dictionary: { [key: string]: string };
+  private _dictionary: Map<string, string> = new Map();
 
-  constructor(dictionary: { [key: string]: string }){
-    this._dictionary = dictionary;
+  constructor(dictionary?: { [key: string]: string }){
+    for(var key in dictionary){
+      this.set(key, dictionary[key]);
+    }
   }
   keys() : string[]{
     return Object.keys(this._dictionary);
   }
   set(name: string, value: string|string[]): void {
+    name = name.toUpperCase();
     if(typeof value === 'string'){
       this._dictionary[name] = value;
     } else {
@@ -147,9 +118,11 @@ class HttpHeadersFromDictionary implements HttpHeaders {
     }
   }
   get(name: string): string {
+    name = name.toUpperCase();
     return this._dictionary[name];
   }
   has(name: string): boolean {
+    name = name.toUpperCase();
     return this._dictionary.hasOwnProperty(name);
   }
 
