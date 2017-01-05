@@ -36,11 +36,11 @@ export function sendData<T>(subscribers: Map<string, Subscriber<T>>, data: T) {
   iterableForEach(subscribers.values(), (sub) => sub.next(data));
 }
 
-export function sendMessageIfPrefixed<T>(prefix: string, serialData: string, subscribers: Map<string, Subscriber<T>>){
+export function sendMessageIfPrefixed<T>(prefix: string, serialData: string, subscribers: Map<string, Subscriber<SocketMessage<T>>>){
   if(hasPrefix(prefix, serialData)){
     var message = deserializeMessage(serialData.substring(prefix.length).trim());
     if(message){
-      sendData(this._dataSubscribers, message);
+      sendData(subscribers, message);
     }
   }
 }

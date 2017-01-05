@@ -1,6 +1,6 @@
 import {Observable} from 'rxjs/Rx';
 
-import {HttpRequest, HttpResponse, RequestFulfiller, defaultRequestFulfiller} from './http';
+import {HttpRequest, HttpResponse, RequestFulfiller, defaultRequestFulfiller, StockingsRequest} from './http';
 import {wrapObservable, MessageMappingDictionary} from './wrapObservable';
 import {SocketMessage} from './socketMessage';
 
@@ -51,12 +51,16 @@ export class StockingsClient<Req extends HttpRequest> {
       return wrapObservable(responseObservable, this._socket, mappings);
     }
 
+    if(!request.headers){
+      request = ((new StockingsRequest(request) as HttpRequest) as Req);
+    }
+
     var token = this._socket.getToken();
     if(token){
       request.headers.set(TOKEN_HEADER, token);
     } else if(this._waitUntilToken){
       var done = false;
-      return this._socket.tokenObservable.flatMap((token) => {
+      return this._socket.tokenObservable.first().flatMap((token) => {
         request.headers.set(TOKEN_HEADER, token);
         done = true;
         return makeRequest();

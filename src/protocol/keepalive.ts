@@ -6,7 +6,7 @@ import {SocketConnection} from '../socketConnection';
 const ONE_SECOND = 1000;
 
 export function applyKeepalive(connection: SocketConnection) {
-  var timeoutId: number;
+  var timeoutId: any;
 
   function restartTimer() {
     if(timeoutId){

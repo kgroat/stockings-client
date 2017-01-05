@@ -1,5 +1,56 @@
 import {Observable, Subscriber} from 'rxjs/Rx';
 
+export class StockingsHeaders implements HttpHeaders {
+  private _headers: Map<string, string> = new Map();
+  constructor() {
+    
+  }
+  keys() : string[]{
+    var output = [];
+    var iterator = this._headers.keys();
+    var nxt = iterator.next();
+    while(!nxt.done){
+      output.push(nxt.value);
+      nxt = iterator.next();
+    }
+    return output;
+  }
+  set(name: string, value: string|string[]){
+    var valueAsString: string;
+    if(value instanceof Array){
+      valueAsString = value.join(',');
+    } else {
+      valueAsString = value;
+    }
+    this._headers.set(name, valueAsString);
+  }
+  get(name: string) : string {
+    return this._headers.get(name);
+  }
+  has(name: string) : boolean {
+    return this._headers.has(name);
+  }
+}
+
+export class StockingsRequest implements HttpRequest {
+  constructor(options: HttpRequest) {
+    this.url = options.url;
+    this.method = options.method;
+    this.search = options.search
+    this.body = options.body;
+    this.responseType = options.responseType;
+    if(options.headers){
+      this.headers = options.headers;
+    }
+  }
+  url: string;
+  method: string;
+  search?: string|SearchParams;
+  headers: HttpHeaders = new StockingsHeaders();
+  body?: any;
+  responseType?: string;
+}
+
 export interface HttpRequest {
   url: string;
   method: string;
@@ -36,6 +87,14 @@ export function defaultRequestFulfiller(request: HttpRequest): Observable<HttpRe
 
     xhr.open(request.method, getFullUrl(request), true);
     xhr.responseType = request.responseType || 'json';
+
+
+    var body = request.body;
+    if(typeof request.body === 'object'){
+      body = JSON.stringify(body);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+    }
+
     if(request.headers){
       request.headers.keys().forEach((key) => {
         xhr.setRequestHeader(key, request.headers.get(key));
@@ -53,11 +112,6 @@ export function defaultRequestFulfiller(request: HttpRequest): Observable<HttpRe
         sub.complete();
       }
     };
-
-    var body = request.body;
-    if(typeof request.body === 'object'){
-      body = JSON.stringify(body);
-    }
 
     xhr.send(body);
   });

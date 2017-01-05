@@ -3,6 +3,7 @@
   "version": "0.1.2",
   "description": "Client for the socketized observable framework",
   "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "prepublish": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"

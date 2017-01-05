@@ -55,6 +55,7 @@ export function wrapObservable<T>(responseObservable: Observable<HttpResponse>, 
       }
       sub.next(responseBody);
 
+      
       messageSubscriptions = messageObservables.map((obs) => {
         return obs.subscribe((data) => {
           sub.next(data);
@@ -81,7 +82,7 @@ function getSubscriptionData<T>(subscriptionsJson: string, connection: SocketCon
     try {
       var subscriptionData: SubscriptionObject = JSON.parse(subscriptionsJson);
       var transactionId = subscriptionData.transactionId;
-      var subscriptions = subscriptionData.subscriptions;
+      var subscriptions = subscriptionData.subscriptions || [];
       var messageObservables = buildObservables(subscriptions, connection, mappings);
 
       return {
