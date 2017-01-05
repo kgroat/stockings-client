@@ -1,5 +1,5 @@
 
-import {Subscription, Subscriber} from 'rxjs/rx';
+import {Subscription, Subscriber} from 'rxjs/Rx';
 
 import {SocketConnection} from '../socketConnection';
 import {SocketMessage} from '../socketMessage';
