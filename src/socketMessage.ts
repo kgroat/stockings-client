@@ -1,4 +1,4 @@
-import {Observable, Subscriber} from 'rxjs/rx';
+import {Observable, Subscriber} from 'rxjs/Rx';
 
 import {SocketConnection} from './socketConnection';
 

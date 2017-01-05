@@ -1,5 +1,5 @@
 
-import {Observable, Subscriber} from 'rxjs/rx';
+import {Observable, Subscriber} from 'rxjs/Rx';
 
 export function toPromise<T>(observable: Observable<T>, resolveWhen?: (data: T) => boolean): Promise<T> {
   return new Promise<T>((res, rej) => {
