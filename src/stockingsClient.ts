@@ -11,7 +11,7 @@ const TOKEN_TYPE = 'client-token';
 
 export interface StockingsClientOptions<Req extends HttpRequest> {
   socket?: SocketConnection;
-  socketEndpoint?: string;
+  socketEndpoint?: string|number;
   makeRequest?: RequestFulfiller<Req>;
   waitUntilToken?: boolean;
 }
@@ -77,6 +77,25 @@ function getFulfiller<Req extends HttpRequest>(options: StockingsClientOptions<R
   return defaultRequestFulfiller;
 }
 
+function buildLocalEndpoint(port?: number): string {
+  var protocol: string;
+  if(location.protocol.indexOf('https') >= 0){
+    protocol = 'wss:';
+  } else {
+    protocol = 'ws:';
+  }
+
+  var host = location.host;
+  if(port){
+    if(host.indexOf(':') > 0){
+      host = host.substring(0, host.indexOf(':'))
+    }
+    host += port;
+  }
+
+  return `${protocol}//${host}/`;
+}
+
 function getEndpoint<Req extends HttpRequest>(options: StockingsClientOptions<Req>|SocketConnection|string): string {
   if(typeof options === 'string'){
     return options;
@@ -84,7 +103,14 @@ function getEndpoint<Req extends HttpRequest>(options: StockingsClientOptions<Re
   if(typeof options === 'object' && typeof (<SocketConnection>options).sendData === 'function'){
     return null;
   }
-  return (<StockingsClientOptions<Req>>options).socketEndpoint;
+  var endpoint = (<StockingsClientOptions<Req>>options).socketEndpoint;
+  if(endpoint === undefined || endpoint === null){
+    return buildLocalEndpoint();
+  } if(typeof endpoint === 'string'){
+    return endpoint;
+  } else {
+    return buildLocalEndpoint(endpoint);
+  }
 }
 
 function getSocket<Req extends HttpRequest>(options: StockingsClientOptions<Req>|SocketConnection|string): SocketConnection {
