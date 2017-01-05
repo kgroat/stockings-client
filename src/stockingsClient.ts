@@ -106,35 +106,25 @@ function getEndpoint<Req extends HttpRequest>(options: StockingsClientOptions<Re
   var endpoint = (<StockingsClientOptions<Req>>options).socketEndpoint;
   if(endpoint === undefined || endpoint === null){
     return buildLocalEndpoint();
-  } if(typeof endpoint === 'string'){
-    return endpoint;
-  } else {
+  } else if(typeof endpoint === 'number'){
     return buildLocalEndpoint(endpoint);
+  } else {
+    return endpoint;
   }
 }
 
 function getSocket<Req extends HttpRequest>(options: StockingsClientOptions<Req>|SocketConnection|string): SocketConnection {
-  if(typeof options === 'string'){
-    return new SocketConnection(options);
-  }
   if(typeof options === 'object' && typeof (<SocketConnection>options).sendData === 'function'){
     return (<SocketConnection>options);
+  }
+  if(typeof (<StockingsClientOptions<Req>>options).socket === 'object'){
+    return (<StockingsClientOptions<Req>>options).socket;
   }
   return makeSocketFromOptions(options);
 }
 
 function makeSocketFromOptions<Req extends HttpRequest>(options: StockingsClientOptions<Req>): SocketConnection{
-  if(typeof options.socketEndpoint === 'string'){
-    return new SocketConnection(options.socketEndpoint);
-  }
-  if(typeof options.socket === 'object'){
-    return options.socket;
-  }
-  throw new Error('Either a socket or socketEndpoint (URL) is required to construct a StockingsClient.');
-}
-
-function makeSocketFromEndpoint(endpoint: string): SocketConnection{
-  return new SocketConnection(endpoint);
+  return new SocketConnection(getEndpoint(options));
 }
 
 function convertToObservable(res: PromiseLike<HttpResponse>|Observable<HttpResponse>): Observable<HttpResponse> {
