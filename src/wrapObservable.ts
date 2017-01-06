@@ -5,9 +5,19 @@ import {SocketConnection} from './socketConnection';
 
 const SUBSCRIPTION_HEADER = 'client-subscriptions';
 
+interface TransactionSubscription {
+  type: string;
+  mergeStrategy?: string;
+}
+
+interface MergeSubscription<T> {
+  data: Observable<T>;
+  mergeStrategy: (a: T, b: any) => T;
+}
+
 interface SubscriptionObject {
   transactionId: string;
-  subscriptions: string[];
+  subscriptions: TransactionSubscription[];
 }
 
 export interface MessageMappingDictionary<T> {
@@ -20,7 +30,7 @@ export function wrapObservable<T>(responseObservable: Observable<HttpResponse>, 
     var cleanedUp = false;
 
     var transactionId: string = '';
-    var messageObservables: Observable<T>[] = [];
+    var messageObservables: MergeSubscription<T>[] = [];
     var messageSubscriptions: Subscription[] = [];
 
     var subscriptionsCancelled = false;
@@ -47,18 +57,19 @@ export function wrapObservable<T>(responseObservable: Observable<HttpResponse>, 
         return;
       }
       
-      var responseBody: T;
+      var value: T;
       if(mappings && mappings.http){
-        responseBody = mappings.http(res.body);
+        value = mappings.http(res.body);
       } else {
-        responseBody = (<T> res.body);
+        value = (<T> res.body);
       }
-      sub.next(responseBody);
+      sub.next(value);
 
       
-      messageSubscriptions = messageObservables.map((obs) => {
-        return obs.subscribe((data) => {
-          sub.next(data);
+      messageSubscriptions = messageObservables.map((subscription) => {
+        return subscription.data.subscribe((data) => {
+          value = subscription.mergeStrategy(value, data);
+          sub.next(value);
         });
       });
     });
@@ -71,23 +82,37 @@ export function wrapObservable<T>(responseObservable: Observable<HttpResponse>, 
   });
 }
 
-function buildObservables<T>(types: string[], connection: SocketConnection, mappings?: MessageMappingDictionary<T>): Observable<T>[] {
-  return types.map((type): Observable<T> => {
-    return connection.getData(type, mappings && mappings[type]);
+function hydrateMergeStrategy<T>(mergeStrategyString: string): (a: T, b: any) => T {
+  if(!mergeStrategyString){
+    return (a) => a;
+  }
+
+  // TODO: This is unsafe and should be replaced with a better algorithm
+  return eval(mergeStrategyString);
+}
+
+function hydrateSubscriptions<T>(subscriptions: TransactionSubscription[], connection: SocketConnection, mappings?: MessageMappingDictionary<T>): MergeSubscription<T>[] {
+  return subscriptions.map((subscription): MergeSubscription<T> => {
+    return {
+      data: connection.getData<T>(subscription.type, mappings && mappings[subscription.type]),
+      mergeStrategy: hydrateMergeStrategy<T>(subscription.mergeStrategy)
+    };
   });
 }
 
-function getSubscriptionData<T>(subscriptionsJson: string, connection: SocketConnection, mappings?: MessageMappingDictionary<T>): { transactionId: string, data: Observable<T>[] } {
+function getSubscriptionData<T>(subscriptionsJson: string, connection: SocketConnection, mappings?: MessageMappingDictionary<T>): { transactionId: string, data: MergeSubscription<T>[] } {
   if(subscriptionsJson){
     try {
       var subscriptionData: SubscriptionObject = JSON.parse(subscriptionsJson);
+
+
       var transactionId = subscriptionData.transactionId;
       var subscriptions = subscriptionData.subscriptions || [];
-      var messageObservables = buildObservables(subscriptions, connection, mappings);
+      var subscriptionObjects = hydrateSubscriptions(subscriptions, connection, mappings);
 
       return {
         transactionId: transactionId,
-        data: messageObservables
+        data: subscriptionObjects
       };
     } catch (e) {
       // malformed subscription header; do nothing?
