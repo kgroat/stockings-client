@@ -2,6 +2,7 @@ import {Observable, Subscriber, Subscription} from 'rxjs/Rx';
 
 import {HttpResponse} from './http';
 import {SocketConnection} from './socketConnection';
+import {hydrateMergeStrategy} from './mergeStrategyHydrator';
 
 const SUBSCRIPTION_HEADER = 'client-subscriptions';
 
@@ -68,7 +69,10 @@ export function wrapObservable<T>(responseObservable: Observable<HttpResponse>, 
       
       messageSubscriptions = messageObservables.map((subscription) => {
         return subscription.data.subscribe((data) => {
-          value = subscription.mergeStrategy(value, data);
+          var newValue = subscription.mergeStrategy(value, data);
+          if(newValue !== undefined){
+            value = newValue;
+          }
           sub.next(value);
         });
       });
@@ -80,15 +84,6 @@ export function wrapObservable<T>(responseObservable: Observable<HttpResponse>, 
       responseSubscription.unsubscribe();
     };
   });
-}
-
-function hydrateMergeStrategy<T>(mergeStrategyString: string): (a: T, b: any) => T {
-  if(!mergeStrategyString){
-    return (a) => a;
-  }
-
-  // TODO: This is unsafe and should be replaced with a better algorithm
-  return eval(mergeStrategyString);
 }
 
 function hydrateSubscriptions<T>(subscriptions: TransactionSubscription[], connection: SocketConnection, mappings?: MessageMappingDictionary<T>): MergeSubscription<T>[] {
@@ -115,6 +110,7 @@ function getSubscriptionData<T>(subscriptionsJson: string, connection: SocketCon
         data: subscriptionObjects
       };
     } catch (e) {
+      console.error(e.stack || e);
       // malformed subscription header; do nothing?
     }
   }
