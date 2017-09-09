@@ -103,10 +103,10 @@ export class AppModule { }
 Usage within a component
 ```javascript
 @Component({
-  selector: 'app-my-component',
+  selector: 'app-user',
   template: '<div>{{ user | async }}</div>'
 })
-export class MyComponentComponent implements OnInit {
+export class UserComponent implements OnInit {
   @Input() userId: number
   user: Observable<User>
 
