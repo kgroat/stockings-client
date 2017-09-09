@@ -14,20 +14,20 @@ export interface StockingsClientOptions<Req extends HttpRequest> {
   waitUntilToken?: boolean
 }
 
-export class StockingsClient<Req extends HttpRequest> {
+export class StockingsClient {
   private _socket: SocketConnection
-  private _fulfiller: RequestFulfiller<Req>
+  private _fulfiller: RequestFulfiller<HttpRequest>
   private _waitUntilToken: boolean
 
-  constructor (options?: StockingsClientOptions<Req>|SocketConnection|string|number) {
+  constructor (options?: StockingsClientOptions<HttpRequest>|SocketConnection|string|number) {
     this._socket = getSocket(options)
     if (!this._socket) {
       throw new Error('Either a socket or socketEndpoint (URL) is required to construct a StockingsClient.')
     }
     this._fulfiller = getFulfiller(options)
     this._waitUntilToken = true
-    if (typeof (options as StockingsClientOptions<Req>).waitUntilToken === 'boolean') {
-      this._waitUntilToken = (options as StockingsClientOptions<Req>).waitUntilToken
+    if (options && typeof (options as StockingsClientOptions<HttpRequest>).waitUntilToken === 'boolean') {
+      this._waitUntilToken = (options as StockingsClientOptions<HttpRequest>).waitUntilToken
     }
   }
 
@@ -43,10 +43,10 @@ export class StockingsClient<Req extends HttpRequest> {
     return this._socket.unsubscribe(transactionId)
   }
 
-  request<T> (req: Req|string, mappings?: MessageMappingDictionary<T>): Observable<T> {
-    let request: Req
+  request<T> (req: HttpRequest|string, mappings?: MessageMappingDictionary<T>): Observable<T> {
+    let request: HttpRequest
     if (typeof req === 'string') {
-      request = { url: req, method: 'GET' } as Req
+      request = { url: req, method: 'GET' } as HttpRequest
     } else {
       request = req
     }
@@ -57,7 +57,7 @@ export class StockingsClient<Req extends HttpRequest> {
     }
 
     if (!request.headers) {
-      request = (new StockingsRequest(request) as Req)
+      request = (new StockingsRequest(request) as HttpRequest)
     }
 
     let headers: HttpHeaders
@@ -127,6 +127,8 @@ function getSocket<Req extends HttpRequest> (options: StockingsClientOptions<Req
     return options
   } else if (typeof options === 'string' || typeof options === 'number') {
     return makeSocketFromOptions(options)
+  } else if (options === null || options === undefined) {
+    return makeSocketFromOptions(null)
   } else {
     return options.socket
   }
