@@ -141,7 +141,7 @@ export function defaultRequestFulfiller (request: HttpRequest): Observable<HttpR
       } else {
         headers = new HttpHeadersFromDictionary(request.headers as { [key: string]: string })
       }
-      
+
       headers.keys().forEach((key) => {
         xhr.setRequestHeader(key, headers.get(key))
       })

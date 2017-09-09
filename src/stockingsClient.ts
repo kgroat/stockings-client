@@ -59,9 +59,9 @@ export class StockingsClient<Req extends HttpRequest> {
     if (!request.headers) {
       request = (new StockingsRequest(request) as Req)
     }
-    
+
     let headers: HttpHeaders
-    if(typeof (request.headers as HttpHeaders).keys === 'function') {
+    if (typeof (request.headers as HttpHeaders).keys === 'function') {
       headers = request.headers as HttpHeaders
     } else {
       request.headers = headers = new HttpHeadersFromDictionary(request.headers as any)
@@ -112,7 +112,7 @@ function buildLocalEndpoint (port?: number): string {
   return `${protocol}//${host}/`
 }
 
-function getEndpoint<Req extends HttpRequest> (options: string|number): string {
+function getEndpoint (options: string|number): string {
   if (options === null || options === undefined) {
     return buildLocalEndpoint()
   } if (typeof options === 'string') {
@@ -132,7 +132,7 @@ function getSocket<Req extends HttpRequest> (options: StockingsClientOptions<Req
   }
 }
 
-function makeSocketFromOptions<Req extends HttpRequest> (options: string|number): SocketConnection {
+function makeSocketFromOptions (options: string|number): SocketConnection {
   return new SocketConnection(getEndpoint(options))
 }
 
