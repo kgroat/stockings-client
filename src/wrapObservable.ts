@@ -1,8 +1,8 @@
-import {Observable, Subscriber, Subscription} from 'rxjs/Rx'
+import { Observable, Subscriber, Subscription } from 'rxjs/Rx'
 
-import {HttpResponse} from './http'
-import {SocketConnection} from './socketConnection'
-import {hydrateMergeStrategy, MergeStrategy, MergeStrategyString} from './mergeStrategyHydrator'
+import { HttpResponse } from './http'
+import { SocketConnection } from './socketConnection'
+import { hydrateMergeStrategy, MergeStrategy, MergeStrategyString } from './mergeStrategyHydrator'
 
 const SUBSCRIPTION_HEADER = 'client-subscriptions'
 
@@ -27,51 +27,50 @@ export interface MessageMappingDictionary<T> {
   [type: string]: (data: any) => T
 }
 
-export function wrapObservable<T>(responseObservable: Observable<HttpResponse>, connection: SocketConnection, mappings?: MessageMappingDictionary<T>): Observable<T>{
+export function wrapObservable<T> (responseObservable: Observable<HttpResponse>, connection: SocketConnection, mappings?: MessageMappingDictionary<T>): Observable<T> {
   return new Observable<T>((sub: Subscriber<T>) => {
-    var cleanedUp = false
+    let cleanedUp = false
 
-    var transactionId: string = ''
-    var messageObservables: MergeSubscription<T>[] = []
-    var messageSubscriptions: Subscription[] = []
+    let transactionId: string = ''
+    let messageObservables: MergeSubscription<T>[] = []
+    let messageSubscriptions: Subscription[] = []
 
-    var subscriptionsCancelled = false
-    function cancelSubscriptions(){
+    let subscriptionsCancelled = false
+    function cancelSubscriptions () {
       messageSubscriptions.forEach((sub) => {
         sub.unsubscribe()
       })
 
-      if(transactionId){
+      if (transactionId) {
         subscriptionsCancelled = true
         // cancel transactionId
       }
     }
 
-    var responseSubscription = responseObservable.subscribe((res: HttpResponse) => {
-      if(res.headers.has(SUBSCRIPTION_HEADER)){
-        var subscriptionData = getSubscriptionData(res.headers.get(SUBSCRIPTION_HEADER), connection, mappings)
+    const responseSubscription = responseObservable.subscribe((res: HttpResponse) => {
+      if (res.headers.has(SUBSCRIPTION_HEADER)) {
+        const subscriptionData = getSubscriptionData(res.headers.get(SUBSCRIPTION_HEADER), connection, mappings)
         transactionId = subscriptionData.transactionId
         messageObservables = subscriptionData.data
       }
 
-      if(cleanedUp){
+      if (cleanedUp) {
         cancelSubscriptions()
         return
       }
-      
-      var value: T
-      if(mappings && mappings.http){
+
+      let value: T
+      if (mappings && mappings.http) {
         value = mappings.http(res.body)
       } else {
-        value = (<T> res.body)
+        value = (res.body as T)
       }
       sub.next(value)
 
-      
       messageSubscriptions = messageObservables.map((subscription) => {
         return subscription.data.subscribe((data) => {
-          var newValue = subscription.mergeStrategy(value, data)
-          if(newValue !== undefined){
+          const newValue = subscription.mergeStrategy(value, data)
+          if (newValue !== undefined) {
             value = newValue
           }
           sub.next(value)
@@ -79,7 +78,7 @@ export function wrapObservable<T>(responseObservable: Observable<HttpResponse>, 
       })
     })
 
-    return function cleanup(){
+    return function cleanup () {
       cleanedUp = true
       cancelSubscriptions()
       responseSubscription.unsubscribe()
@@ -87,7 +86,7 @@ export function wrapObservable<T>(responseObservable: Observable<HttpResponse>, 
   })
 }
 
-function hydrateSubscriptions<T>(subscriptions: TransactionSubscription[], connection: SocketConnection, mappings?: MessageMappingDictionary<T>): MergeSubscription<T>[] {
+function hydrateSubscriptions<T> (subscriptions: TransactionSubscription[], connection: SocketConnection, mappings?: MessageMappingDictionary<T>): MergeSubscription<T>[] {
   return subscriptions.map((subscription): MergeSubscription<T> => {
     return {
       data: connection.getData<T>(subscription.type, mappings && mappings[subscription.type]),
@@ -96,15 +95,14 @@ function hydrateSubscriptions<T>(subscriptions: TransactionSubscription[], conne
   })
 }
 
-function getSubscriptionData<T>(subscriptionsJson: string, connection: SocketConnection, mappings?: MessageMappingDictionary<T>): { transactionId: string, data: MergeSubscription<T>[] } {
-  if(subscriptionsJson){
+function getSubscriptionData<T> (subscriptionsJson: string, connection: SocketConnection, mappings?: MessageMappingDictionary<T>): { transactionId: string, data: MergeSubscription<T>[] } {
+  if (subscriptionsJson) {
     try {
-      var subscriptionData: SubscriptionObject = JSON.parse(subscriptionsJson)
+      const subscriptionData: SubscriptionObject = JSON.parse(subscriptionsJson)
 
-
-      var transactionId = subscriptionData.transactionId
-      var subscriptions = subscriptionData.subscriptions || []
-      var subscriptionObjects = hydrateSubscriptions(subscriptions, connection, mappings)
+      const transactionId = subscriptionData.transactionId
+      const subscriptions = subscriptionData.subscriptions || []
+      const subscriptionObjects = hydrateSubscriptions(subscriptions, connection, mappings)
 
       return {
         transactionId: transactionId,

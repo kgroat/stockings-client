@@ -1,8 +1,8 @@
 
-import {Observable, Subscriber} from 'rxjs/Rx'
+import { Observable, Subscriber, Subscription } from 'rxjs/Rx'
 
-import {SocketMessage} from './socketMessage'
-import {SocketConnection} from './socketConnection'
+import { SocketMessage } from './socketMessage'
+import { SocketConnection } from './socketConnection'
 
 const ONE_SECOND = 1000
 
@@ -10,7 +10,7 @@ const UNSUBSCRIBE_TYPE = 'unsubscribe'
 const UNSUBSCRIBE_WAIT = 5 * ONE_SECOND
 const UNSUBSCRIBE_ATTEMPT_MAX = 12
 
-export function unsubscribe(client: SocketConnection, transactionId: string): Promise<void> {
+export function unsubscribe (client: SocketConnection, transactionId: string): Promise<void> {
   return new Promise<void>((res, rej) => {
     timedExpectation({
       waitTime: UNSUBSCRIBE_WAIT,
@@ -19,7 +19,7 @@ export function unsubscribe(client: SocketConnection, transactionId: string): Pr
       filter: (msg) => msg.type === UNSUBSCRIBE_TYPE && msg.payload === transactionId,
       attempt: () => client.sendControl(UNSUBSCRIBE_TYPE, transactionId)
     }).subscribe((successful) => {
-      if(successful){
+      if (successful) {
         return res()
       }
       client.restart()
@@ -37,43 +37,45 @@ interface TimedExpectationOptions<T> {
   handle?: (data: SocketMessage<T>) => void
 }
 
-function timedExpectation<T>(options: TimedExpectationOptions<T>): Observable<boolean> {
+function timedExpectation<T> (options: TimedExpectationOptions<T>): Observable<boolean> {
   return new Observable<boolean>((sub: Subscriber<boolean>) => {
-    var success = false
-    var successMessageSent = false
+    let success = false
+    let successMessageSent = false
+    let controlSubscription: Subscription
+    let timerSubscription: Subscription
 
-    function cleanup(){
-      if(controlSubscription) {
+    function cleanup () {
+      if (controlSubscription) {
         controlSubscription.unsubscribe()
         controlSubscription = null
       }
-      if(timerSubscription) {
+      if (timerSubscription) {
         timerSubscription.unsubscribe()
         timerSubscription = null
       }
-      
-      if(!successMessageSent){
+
+      if (!successMessageSent) {
         sub.next(success)
         sub.complete()
         successMessageSent = true
       }
     }
 
-    var controlSubscription = options.controlData.filter(options.filter).subscribe((message) => {
-      if(typeof options.handle === 'function'){
+    controlSubscription = options.controlData.filter(options.filter).subscribe((message) => {
+      if (typeof options.handle === 'function') {
         options.handle(message)
       }
       success = true
       cleanup()
     })
 
-    var timerSubscription = Observable.timer(0, 5000).subscribe((attemptCount) => {
-      if(attemptCount >= UNSUBSCRIBE_ATTEMPT_MAX) {
+    timerSubscription = Observable.timer(0, 5000).subscribe((attemptCount) => {
+      if (attemptCount >= UNSUBSCRIBE_ATTEMPT_MAX) {
         cleanup()
         return
       }
-      
-      if(typeof options.attempt === 'function'){
+
+      if (typeof options.attempt === 'function') {
         options.attempt()
       }
     })

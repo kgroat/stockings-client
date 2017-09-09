@@ -1,15 +1,13 @@
 
-import {Observable, Subscription} from 'rxjs/Rx'
-
-import {SocketConnection} from '../socketConnection'
+import { SocketConnection } from '../socketConnection'
 
 const ONE_SECOND = 1000
 
-export function applyKeepalive(connection: SocketConnection) {
-  var timeoutId: number
+export function applyKeepalive (connection: SocketConnection) {
+  let timeoutId: number
 
-  function restartTimer() {
-    if(timeoutId){
+  function restartTimer () {
+    if (timeoutId) {
       clearTimeout(timeoutId)
     }
     timeoutId = setTimeout(() => {

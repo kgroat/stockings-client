@@ -1,8 +1,8 @@
 
-import {Subscriber, Subscription} from 'rxjs/Rx'
+import { Subscriber } from 'rxjs/Rx'
 
-import {SocketConnection} from '../socketConnection'
-import {sendData} from '../connectionHelpers'
+import { SocketConnection } from '../socketConnection'
+import { sendData } from '../connectionHelpers'
 
 const CLIENT_TOKEN_TYPE = 'client-token'
 
@@ -11,11 +11,11 @@ const THIRTY_SECONDS = 30 * ONE_SECOND
 
 const MAX_TRIES = 12
 
-export function applyToken(connection: SocketConnection, tokenSubscribers: Map<string, Subscriber<string>>) {
-  var tokenWaiterTimerId: number
-  var wasOpen = false
+export function applyToken (connection: SocketConnection, tokenSubscribers: Map<string, Subscriber<string>>) {
+  let tokenWaiterTimerId: number
+  let wasOpen = false
   connection.openObservable.subscribe((isOpen) => {
-    if(isOpen && !wasOpen){
+    if (isOpen && !wasOpen) {
       tokenWaiterTimerId = setTimeout(() => {
         connection.restart()
       }, THIRTY_SECONDS)

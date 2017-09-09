@@ -1,20 +1,16 @@
 
-import {Observable, Subscriber} from 'rxjs/Rx'
+import { Observable, Subscriber } from 'rxjs/Rx'
 
-import {SocketMessage, deserializeMessage, serializeMessage} from './socketMessage'
+import { SocketMessage, serializeMessage } from './socketMessage'
 
 import * as connectionHelpers from './connectionHelpers'
 import * as controlHelpers from './controlHelpers'
 
-import {toPromise} from './observableHelpers'
+import { toPromise } from './observableHelpers'
 
-import {applyProtocol} from './protocol'
+import { applyProtocol } from './protocol'
 
 const STOCKINGS_PROTOCOL = 'stockings'
-
-const OPEN_EVENT = 'open'
-const CLOSE_EVENT = 'close'
-const ERROR_EVENT = 'error'
 
 const DATA_PREFIX = 'm:'
 const CONTROL_PREFIX = 'c:'
@@ -22,6 +18,11 @@ const CONTROL_PREFIX = 'c:'
 const ONE_SECOND = 1000
 
 export class SocketConnection {
+  readonly openObservable: Observable<boolean>
+  readonly dataObservable: Observable<SocketMessage<any>>
+  readonly controlObservable: Observable<SocketMessage<any>>
+  readonly tokenObservable: Observable<string>
+
   private readonly _endpoint: string
   private _isConnecting: boolean
   private _isOpen: boolean
@@ -35,7 +36,7 @@ export class SocketConnection {
   private _socket: WebSocket
   private _token: string
 
-  constructor(endpoint: string){
+  constructor (endpoint: string) {
     this._endpoint = endpoint
     this._isConnecting = this._isOpen = this._isClosed = false
 
@@ -53,77 +54,69 @@ export class SocketConnection {
     this._forceReconnect()
   }
 
-  readonly openObservable: Observable<boolean>
-
-  readonly dataObservable: Observable<SocketMessage<any>>
-
-  readonly controlObservable: Observable<SocketMessage<any>>
-
-  readonly tokenObservable: Observable<string>
-
-  getData<T>(type: string, mapping?: (data: any) => T): Observable<T> {
+  getData<T> (type: string, mapping?: (data: any) => T): Observable<T> {
     return connectionHelpers.makeMessageObservable(this.dataObservable, type, mapping)
   }
 
-  getControl<T>(type: string, mapping?: (data: any) => T): Observable<T> {
+  getControl<T> (type: string, mapping?: (data: any) => T): Observable<T> {
     return connectionHelpers.makeMessageObservable(this.controlObservable, type, mapping)
   }
 
-  sendData(type: string, payload: any): Promise<void>{
+  sendData (type: string, payload: any): Promise<void> {
     return this._sendRaw(DATA_PREFIX + serializeMessage(type, payload))
   }
 
-  sendControl(type: string, payload: any): Promise<void> {
+  sendControl (type: string, payload: any): Promise<void> {
     return this._sendRaw(CONTROL_PREFIX + serializeMessage(type, payload))
   }
 
-  unsubscribe(transactionId: string): Promise<void> {
+  unsubscribe (transactionId: string): Promise<void> {
     return controlHelpers.unsubscribe(this, transactionId)
   }
 
-  waitUntilOpen(): Promise<boolean> {
+  waitUntilOpen (): Promise<boolean> {
     return Promise.resolve(this._isOpen).then((isOpen) => {
       return isOpen || toPromise(this.openObservable, open => open)
     })
   }
 
-  isOpen(): boolean {
+  isOpen (): boolean {
     return this._isOpen
   }
 
-  getToken(): string {
-    if(!this._isOpen){
+  getToken (): string {
+    if (!this._isOpen) {
       return null
     }
     return this._token
   }
 
-  restart(): Promise<boolean> {
+  restart (): Promise<boolean> {
     this._forceReconnect()
     return this.waitUntilOpen()
   }
 
-  private _sendRaw(rawData: string): Promise<void> {
+  private _sendRaw (rawData: string): Promise<void> {
     return this.waitUntilOpen().then(() => this._socket.send(rawData))
   }
 
-  private _reconnect() {
-    if(!this._isOpen && !this._isConnecting){
+  private _reconnect () {
+    if (!this._isOpen && !this._isConnecting) {
       this._forceReconnect()
     }
   }
 
-  private _forceReconnect(){
+  private _forceReconnect () {
     try {
       this._setSocket(new WebSocket(this._endpoint, STOCKINGS_PROTOCOL))
-    } catch(e){
+    } catch (e) {
       setTimeout(() => this._forceReconnect(), 15 * ONE_SECOND)
     }
   }
 
-  private _setSocket(socket: WebSocket){
+  private _setSocket (socket: WebSocket) {
 
-    if(this._socket){
+    if (this._socket) {
       this._socket.removeEventListener('open', this.openListener)
       this._socket.removeEventListener('close', this.closeListener)
       this._socket.removeEventListener('error', this.errorListener)
@@ -161,7 +154,7 @@ export class SocketConnection {
   }
 
   private messageListener = (ev) => {
-    var data = (<string>ev.data)
+    const data = (ev.data as string)
     connectionHelpers.sendMessageIfPrefixed(DATA_PREFIX, data, this._dataSubscribers)
     connectionHelpers.sendMessageIfPrefixed(CONTROL_PREFIX, data, this._controlSubscribers)
   }

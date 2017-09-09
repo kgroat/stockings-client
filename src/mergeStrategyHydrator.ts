@@ -4,8 +4,8 @@ export type MergeStrategyString = 'replace' | 'append' | 'prepend' | 'upsert'
 export type MergeStrategy<T> = (a: T, b: any) => T
 
 type MergeStrategyInner = (
-  (<A>(a: A, b: A) => A) | 
-  (<B>(a: B[], b: B) => B[]) | 
+  (<A>(a: A, b: A) => A) |
+  (<B>(a: B[], b: B) => B[]) |
   (<A, B>(a: A, b: B) => A)
 )
 
@@ -24,7 +24,7 @@ const UPSERT_MERGE_STRATEGY = function (key: string) {
       return [...list, current]
     } else {
       return [
-        ...list.slice(0, index-1),
+        ...list.slice(0, index - 1),
         current,
         ...list.slice(index)
       ]
@@ -44,8 +44,8 @@ const strategyMap: StrategyMap = {
   [upsert]: UPSERT_MERGE_STRATEGY
 }
 
-export function hydrateMergeStrategy<T>(mergeStrategyString: MergeStrategyString, upsertKey?: string): MergeStrategy<T> {
-  if(!mergeStrategyString){
+export function hydrateMergeStrategy<T> (mergeStrategyString: MergeStrategyString, upsertKey?: string): MergeStrategy<T> {
+  if (!mergeStrategyString) {
     return DEFAULT_MERGE_STRATEGY
   }
   return strategyMap[mergeStrategyString](upsertKey) as MergeStrategy<T>
