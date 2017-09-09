@@ -2,18 +2,19 @@ import {Observable, Subscriber, Subscription} from 'rxjs/Rx';
 
 import {HttpResponse} from './http';
 import {SocketConnection} from './socketConnection';
-import {hydrateMergeStrategy} from './mergeStrategyHydrator';
+import {hydrateMergeStrategy, MergeStrategy, MergeStrategyString} from './mergeStrategyHydrator';
 
 const SUBSCRIPTION_HEADER = 'client-subscriptions';
 
 interface TransactionSubscription {
   type: string;
-  mergeStrategy?: string;
+  mergeStrategy?: MergeStrategyString;
+  upsertKey?: string
 }
 
 interface MergeSubscription<T> {
-  data: Observable<T>;
-  mergeStrategy: (a: T, b: any) => T;
+  data: Observable<any>;
+  mergeStrategy: MergeStrategy<T>
 }
 
 interface SubscriptionObject {
@@ -90,7 +91,7 @@ function hydrateSubscriptions<T>(subscriptions: TransactionSubscription[], conne
   return subscriptions.map((subscription): MergeSubscription<T> => {
     return {
       data: connection.getData<T>(subscription.type, mappings && mappings[subscription.type]),
-      mergeStrategy: hydrateMergeStrategy<T>(subscription.mergeStrategy)
+      mergeStrategy: hydrateMergeStrategy<T>(subscription.mergeStrategy, subscription.upsertKey)
     };
   });
 }

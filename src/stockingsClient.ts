@@ -70,11 +70,15 @@ export class StockingsClient<Req extends HttpRequest> {
   }
 }
 
-function getFulfiller<Req extends HttpRequest>(options: StockingsClientOptions<Req>): RequestFulfiller<Req> {
-  if(typeof options.makeRequest === 'function'){
-    return options.makeRequest;
+function getFulfiller<Req extends HttpRequest>(options: StockingsClientOptions<Req>|SocketConnection|string): RequestFulfiller<Req> {
+  if(options instanceof SocketConnection || typeof options === 'string'){
+    return defaultRequestFulfiller;
+  } else {
+    if(typeof options.makeRequest === 'function'){
+      return options.makeRequest;
+    }
+    return defaultRequestFulfiller;
   }
-  return defaultRequestFulfiller;
 }
 
 function buildLocalEndpoint(port?: number): string {
@@ -123,7 +127,7 @@ function getSocket<Req extends HttpRequest>(options: StockingsClientOptions<Req>
   return makeSocketFromOptions(options);
 }
 
-function makeSocketFromOptions<Req extends HttpRequest>(options: StockingsClientOptions<Req>): SocketConnection{
+function makeSocketFromOptions<Req extends HttpRequest>(options: StockingsClientOptions<Req>|SocketConnection|string): SocketConnection{
   return new SocketConnection(getEndpoint(options));
 }
 

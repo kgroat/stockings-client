@@ -122,50 +122,47 @@ export class SocketConnection {
   }
 
   private _setSocket(socket: WebSocket){
-    var openListener = (ev) => {
-      this._isConnecting = false;
-      this._isOpen = true;
-      connectionHelpers.sendData(this._openSubscribers, this._isOpen);
-    };
-    var closeListener = (ev) => {
-      this._isConnecting = false;
-      this._isOpen = false;
-      this._isClosed = true;
-      connectionHelpers.sendData(this._openSubscribers, this._isOpen);
-      setTimeout(() => {
-        this._reconnect();
-      }, 15 * ONE_SECOND);
-    };
-    var errorListener = (ev) => {
-      this._isConnecting = false;
-      this._isOpen = false;
-      this._isClosed = true;
-      connectionHelpers.sendData(this._openSubscribers, this._isOpen);
-      setTimeout(() => {
-        this._reconnect();
-      }, 15 * ONE_SECOND);
-    };
-    var messageListener = (ev) => {
-      var data = (<string>ev.data);
-      connectionHelpers.sendMessageIfPrefixed(DATA_PREFIX, data, this._dataSubscribers);
-      connectionHelpers.sendMessageIfPrefixed(CONTROL_PREFIX, data, this._controlSubscribers);
-    };
 
     if(this._socket){
-      this._socket.removeEventListener('open', openListener);
-      this._socket.removeEventListener('close', closeListener);
-      this._socket.removeEventListener('error', errorListener);
-      this._socket.removeEventListener('message', messageListener);
+      this._socket.removeEventListener('open', this.openListener);
+      this._socket.removeEventListener('close', this.closeListener);
+      this._socket.removeEventListener('error', this.errorListener);
+      this._socket.removeEventListener('message', this.messageListener);
       this._socket.close();
     }
     this._isConnecting = true;
     this._isOpen = this._isClosed = false;
 
-    socket.addEventListener('open', openListener);
-    socket.addEventListener('close', closeListener);
-    socket.addEventListener('error', errorListener);
-    socket.addEventListener('message', messageListener);
+    socket.addEventListener('open', this.openListener);
+    socket.addEventListener('close', this.closeListener);
+    socket.addEventListener('error', this.errorListener);
+    socket.addEventListener('message', this.messageListener);
 
     this._socket = socket;
   }
+
+  private openListener = (ev) => {
+    this._isConnecting = false;
+    this._isOpen = true;
+    connectionHelpers.sendData(this._openSubscribers, this._isOpen);
+  };
+
+  private closeListener = (ev) => {
+    this._isConnecting = this._isOpen = false;
+    this._isClosed = true;
+    connectionHelpers.sendData(this._openSubscribers, this._isOpen);
+    setTimeout(() => {
+      this._reconnect();
+    }, 15 * ONE_SECOND);
+  };
+
+  private errorListener = (ev) => {
+    this.closeListener(ev)
+  };
+
+  private messageListener = (ev) => {
+    var data = (<string>ev.data);
+    connectionHelpers.sendMessageIfPrefixed(DATA_PREFIX, data, this._dataSubscribers);
+    connectionHelpers.sendMessageIfPrefixed(CONTROL_PREFIX, data, this._controlSubscribers);
+  };
 }

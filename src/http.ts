@@ -16,7 +16,7 @@ export class StockingsRequest implements HttpRequest {
   search?: string|SearchParams;
   headers: HttpHeaders = new HttpHeadersFromDictionary();
   body?: any;
-  responseType?: string;
+  responseType?: XMLHttpRequestResponseType;
 }
 
 export interface HttpRequest {
@@ -25,7 +25,7 @@ export interface HttpRequest {
   search?: string|SearchParams;
   headers?: HttpHeaders;
   body?: any;
-  responseType?: string;
+  responseType?: XMLHttpRequestResponseType;
 }
 
 export interface HttpResponse {
