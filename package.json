@@ -29,6 +29,8 @@
     "typescript": "^2.0.8"
   },
   "devDependencies": {
+    "tslint": "^5.7.0",
+    "tslint-config-standard": "^6.0.1",
     "typescript": "^2.0.7"
   }
 }
