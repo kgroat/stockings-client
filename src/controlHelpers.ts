@@ -22,7 +22,7 @@ export function unsubscribe (client: SocketConnection, transactionId: string): P
       if (successful) {
         return res()
       }
-      client.restart()
+      client.restart().catch()
       rej(new Error('Did not receive an unsubscribe response from server within 30 seconds'))
     })
   })

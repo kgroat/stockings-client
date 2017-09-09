@@ -11,7 +11,7 @@ export function applyKeepalive (connection: SocketConnection) {
       clearTimeout(timeoutId)
     }
     timeoutId = setTimeout(() => {
-      connection.restart()
+      connection.restart().catch()
     }, 60 * ONE_SECOND)
   }
 

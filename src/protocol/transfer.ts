@@ -28,7 +28,7 @@ export function applyTransfer (connection: SocketConnection) {
           transferSubscription.unsubscribe()
           return
         }
-        connection.sendControl(TRANSFER_TYPE, tokenToTransfer)
+        connection.sendControl(TRANSFER_TYPE, tokenToTransfer).catch()
       })
     }
     oldToken = token
