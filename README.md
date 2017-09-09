@@ -24,14 +24,14 @@ let client = new StockingsClient(3000) // connects to the host of the current UR
 Specifying host and port:
 ```javascript
 import { StockingsClient } from 'stockings-client'
-let client = new StockingsClient('localhost:3000') // connects to the given host and port
+let client = new StockingsClient('ws://localhost:3000') // connects to the given host and port
 ```
 
 Advanced configuraiton with port and/or host:
 ```javascript
 import { StockingsClient, SocketConnection } from 'stockings-client'
 let client = new StockingsClient({
-  socketEndpoint: 'localhost:3000', // specify host:port or just port
+  socketEndpoint: 'ws://localhost:3000', // specify host:port or just port
   waitUntilToken: false // don't wait until the token is recieved before making any requests
 })
 ```
@@ -39,7 +39,7 @@ let client = new StockingsClient({
 Advanced configuraiton with socket connection:
 ```javascript
 import { StockingsClient, SocketConnection } from 'stockings-client'
-let connection = new SocketConnection('localhost:3000') // only accepts full host:port
+let connection = new SocketConnection('ws://localhost:3000') // only accepts full host:port
 let client = new StockingsClient({
   socket: connection, // specify your own connection
   waitUntilToken: false // don't wait until the token is recieved before making any requests
