@@ -47,7 +47,7 @@ export function wrapObservable<T> (responseObservable: Observable<HttpResponse>,
       }
     }
 
-    const responseSubscription = responseObservable.subscribe((res: HttpResponse) => {
+    const responseSubscription = responseObservable.subscribe((res) => {
       if (res.headers.has(SUBSCRIPTION_HEADER)) {
         const subscriptionData = getSubscriptionData(res.headers.get(SUBSCRIPTION_HEADER), connection, mappings)
         transactionId = subscriptionData.transactionId

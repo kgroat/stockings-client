@@ -1,10 +1,12 @@
 import { Observable, Subscriber } from 'rxjs/Rx'
 
+export type HttpMethod = 'GET'|'POST'|'PUT'|'DELETE'|'PATCH'|'HEAD'|'OPTIONS'
+
 export interface HttpRequest {
   url: string
-  method: string
+  method: HttpMethod
   search?: string|SearchParams
-  headers?: HttpHeaders
+  headers?: HttpHeaders|{ [key: string]: string }
   body?: any
   responseType?: XMLHttpRequestResponseType
 }
@@ -30,7 +32,7 @@ export interface RequestFulfiller<Req extends HttpRequest> {
   (request: Req): Promise<HttpResponse>|Observable<HttpResponse>
 }
 
-class HttpHeadersFromDictionary implements HttpHeaders {
+export class HttpHeadersFromDictionary implements HttpHeaders {
   private _dictionary: Map<string, string> = new Map()
 
   constructor (dictionary?: { [key: string]: string }) {
@@ -81,7 +83,7 @@ class HttpHeadersFromDictionary implements HttpHeaders {
   }
 }
 
-class HttpResponseFromXhr implements HttpResponse {
+export class HttpResponseFromXhr implements HttpResponse {
   body: string|Object|ArrayBuffer|Blob
   status: number
   headers: HttpHeaders
@@ -97,7 +99,7 @@ class HttpResponseFromXhr implements HttpResponse {
 
 export class StockingsRequest implements HttpRequest {
   url: string
-  method: string
+  method: HttpMethod
   search?: string|SearchParams
   headers: HttpHeaders = new HttpHeadersFromDictionary()
   body?: any
@@ -110,7 +112,11 @@ export class StockingsRequest implements HttpRequest {
     this.body = options.body
     this.responseType = options.responseType
     if (options.headers) {
-      this.headers = options.headers
+      if (typeof (options.headers as HttpHeaders).keys === 'function') {
+        this.headers = options.headers as HttpHeaders
+      } else {
+        this.headers = new HttpHeadersFromDictionary(options.headers as { [key: string]: string })
+      }
     }
   }
 }
@@ -129,8 +135,15 @@ export function defaultRequestFulfiller (request: HttpRequest): Observable<HttpR
     }
 
     if (request.headers) {
-      request.headers.keys().forEach((key) => {
-        xhr.setRequestHeader(key, request.headers.get(key))
+      let headers: HttpHeaders
+      if (typeof (request.headers as HttpHeaders).keys === 'function') {
+        headers = request.headers as HttpHeaders
+      } else {
+        headers = new HttpHeadersFromDictionary(request.headers as { [key: string]: string })
+      }
+      
+      headers.keys().forEach((key) => {
+        xhr.setRequestHeader(key, headers.get(key))
       })
     }
 

@@ -1,5 +1,3 @@
-import { StockingsClient } from './src/stockingsClient'
-import { StockingsRequest } from './src/http'
-
-export const Client = StockingsClient
-export const Request = StockingsRequest
+export { StockingsClient } from './src/stockingsClient'
+export { StockingsRequest, HttpHeadersFromDictionary, HttpResponseFromXhr } from './src/http'
+export { SocketConnection } from './src/socketConnection'
