@@ -104,16 +104,32 @@ Usage within a component
 ```javascript
 @Component({
   selector: 'app-user',
-  template: '<div>{{ user | async }}</div>'
+  template: `
+    <div *ngIf="user">
+      <img [src]="user.avatarurl" />
+      {{ user.username }}
+    </div>
+  `
 })
-export class UserComponent implements OnInit {
+export class UserComponent implements OnInit, OnDestroy {
   @Input() userId: number
-  user: Observable<User>
+  private user$: Subscription
+  user: User
+  error: any
 
   constructor(private client: StockingsClient) {}
 
   ngOnInit() {
-    this.user = this.client.request<User>(`/api/user/${this.userId}`)
+    this.user$ = this.client
+                     .request<User>(`/api/user/${this.userId}`)
+                     .subscribe(
+                       user => this.user = user,
+                       error => this.error = error
+                     )
+  }
+
+  ngOnDestroy() {
+    this.user$.unsubscribe()
   }
 }
 ```
